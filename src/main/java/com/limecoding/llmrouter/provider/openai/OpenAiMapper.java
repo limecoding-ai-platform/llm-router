@@ -18,7 +18,9 @@ public class OpenAiMapper {
 
         return new OpenAiRequest(
                 chatRequest.model(),
-                messages);
+                messages,
+                chatRequest.maxTokens()
+                );
     }
 
     public ChatResponse toDomain(OpenAiResponse wire) {
