@@ -1,4 +1,10 @@
 package com.limecoding.llmrouter.core.model;
 
-public class ChatRequest {
+import java.util.List;
+
+public record ChatRequest(
+        String model,
+        List<Message> messages,
+        Integer maxTokens,
+        Double temperature) {
 }

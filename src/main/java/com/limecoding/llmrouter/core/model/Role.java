@@ -1,4 +1,6 @@
 package com.limecoding.llmrouter.core.model;
 
-public class Role {
+public enum Role {
+    USER,
+    ASSISTANT
 }
