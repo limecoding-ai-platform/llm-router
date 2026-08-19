@@ -1,4 +1,17 @@
 package com.limecoding.llmrouter.api.dto;
 
-public class OpenAiChatRequest {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
+public record OpenAiChatRequest(
+        String model,
+        List<OpenAiMessage> messages,
+        @JsonProperty("max_tokens") Integer maxTokens,
+        @JsonProperty("temperature") Double temperature
+) {
+    public record OpenAiMessage(
+            String role,
+            String content) {
+    }
 }
