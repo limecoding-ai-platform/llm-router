@@ -1,0 +1,89 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Eclipse ###
+.metadata/
+*.launch
+
+### Java / JVM ###
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+
+### Gradle ###
+.gradletasknamecache
+gradle-app.setting
+
+### Secrets / local config ###
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+src/main/resources/application-local.*
+src/main/resources/application-secret.*
+src/main/resources/application-*-local.*
+
+### Logs / temp ###
+logs/
+*.log.*
+*.tmp
+*.bak
+*.swp
+*~
+
+### OS ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+### Claude Code ###
+.claude/settings.local.json
