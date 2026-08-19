@@ -1,3 +1,14 @@
 spring:
   application:
     name: llmRouter
+  http:
+    clients:
+      connect-timeout: 5s
+      read-timeout: 5m
+
+
+router:
+  providers:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      api-url: https://api.openai.com/v1
