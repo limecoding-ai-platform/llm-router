@@ -2,7 +2,7 @@ package com.limecoding.llmrouter.api;
 
 import com.limecoding.llmrouter.api.dto.OpenAiChatRequest;
 import com.limecoding.llmrouter.api.dto.OpenAiChatResponse;
-import com.limecoding.llmrouter.core.ProviderAdapter;
+import com.limecoding.llmrouter.config.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.*;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,17 +16,16 @@ import java.util.Locale;
 @RequestMapping("/v1")
 @RestController
 public class ChatCompletionsController {
+    private final ProviderRegistry registry;
 
-    private final ProviderAdapter adapter;
-
-    public ChatCompletionsController(ProviderAdapter adapter) {
-        this.adapter = adapter;
+    public ChatCompletionsController(ProviderRegistry registry) {
+        this.registry = registry;
     }
 
     @PostMapping("/chat/completions")
     public OpenAiChatResponse chat(@RequestBody OpenAiChatRequest request) {
         ChatRequest domain = toDomain(request);
-        ChatResponse chat = adapter.chat(domain);
+        ChatResponse chat = registry.get(request.provider()).chat(domain);
 
         return toApi(chat);
     }
