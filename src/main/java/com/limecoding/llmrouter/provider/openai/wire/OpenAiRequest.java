@@ -7,6 +7,7 @@ import java.util.List;
 public record OpenAiRequest(
         String model,
         List<OpenAiMessage> messages,
-        @JsonProperty("max_tokens") Integer maxTokens
+        @JsonProperty("max_tokens") Integer maxTokens,
+        boolean stream
 ) {
 }

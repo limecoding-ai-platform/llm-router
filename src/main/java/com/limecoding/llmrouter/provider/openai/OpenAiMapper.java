@@ -19,8 +19,21 @@ public class OpenAiMapper {
         return new OpenAiRequest(
                 chatRequest.model(),
                 messages,
-                chatRequest.maxTokens()
-                );
+                chatRequest.maxTokens(),
+                false);
+    }
+
+    public OpenAiRequest toWire(ChatRequest chatRequest, boolean stream) {
+        var messages = chatRequest.messages().stream()
+                .map(this::toWire)
+                .toList();
+
+        return new OpenAiRequest(
+                chatRequest.model(),
+                messages,
+                chatRequest.maxTokens(),
+                stream
+        );
     }
 
     public ChatResponse toDomain(OpenAiResponse wire) {

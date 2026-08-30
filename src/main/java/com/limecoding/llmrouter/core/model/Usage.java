@@ -4,7 +4,7 @@ public record Usage(
         int promptTokens,
         int completionTokens) {
 
-    public int totalToken() {
+    public int totalTokens() {
         return promptTokens + completionTokens;
     }
 }
