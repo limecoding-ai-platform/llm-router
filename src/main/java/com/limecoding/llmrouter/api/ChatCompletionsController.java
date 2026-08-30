@@ -24,16 +24,17 @@ public class ChatCompletionsController {
 
     @PostMapping("/chat/completions")
     public OpenAiChatResponse chat(@RequestBody OpenAiChatRequest request) {
-        ChatRequest domain = toDomain(request);
-        ChatResponse chat = registry.get(request.provider()).chat(domain);
+        ModelRef parse = ModelRef.parse(request.model());
+        ChatRequest domain = toDomain(request, parse.model());
+        ChatResponse chat = registry.get(parse.provider()).chat(domain);
 
         return toApi(chat);
     }
 
-    private ChatRequest toDomain(OpenAiChatRequest request) {
+    private ChatRequest toDomain(OpenAiChatRequest request, String model) {
         List<Message> messages = request.messages().stream().map(this::toDomain).toList();
         return new ChatRequest(
-                request.model(),
+                model,
                 messages,
                 request.maxTokens(),
                 request.temperature()
