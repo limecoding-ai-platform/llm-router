@@ -19,4 +19,19 @@ public class ProviderClientConfig {
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .build();
     }
+
+    @Bean
+    RestClient anthropicRestClient(
+            RestClient.Builder builder,
+            @Value("${router.providers.anthropic.api-key}") String apiKey,
+            @Value("${router.providers.anthropic.base-url}") String baseUrl,
+            @Value("${router.providers.anthropic.anthropic-version}") String anthropicVersion
+    ) {
+        return builder
+                .baseUrl(baseUrl)
+                .defaultHeader("x-api-key", apiKey)
+                .defaultHeader("anthropic-version", anthropicVersion)
+                .defaultHeader("content-type", "application/json")
+                .build();
+    }
 }

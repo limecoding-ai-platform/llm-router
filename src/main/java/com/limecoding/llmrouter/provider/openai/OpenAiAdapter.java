@@ -5,6 +5,7 @@ import com.limecoding.llmrouter.core.model.ChatRequest;
 import com.limecoding.llmrouter.core.model.ChatResponse;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiRequest;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,7 +14,9 @@ public class OpenAiAdapter implements ProviderAdapter {
     private final OpenAiMapper mapper;
     private final RestClient restClient;
 
-    public OpenAiAdapter(OpenAiMapper mapper, RestClient restClient) {
+    public OpenAiAdapter(
+            OpenAiMapper mapper,
+            @Qualifier("openAiRestClient") RestClient restClient) {
         this.mapper = mapper;
         this.restClient = restClient;
     }
