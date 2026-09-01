@@ -7,6 +7,7 @@ import java.util.List;
 public record AnthropicRequest(
         String model,
         List<AnthropicMessage> messages,
-        @JsonProperty("max_tokens") Integer maxTokens
+        @JsonProperty("max_tokens") Integer maxTokens,
+        boolean stream
 ) {
 }

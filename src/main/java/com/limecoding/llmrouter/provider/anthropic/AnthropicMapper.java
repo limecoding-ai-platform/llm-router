@@ -19,7 +19,17 @@ public class AnthropicMapper {
         return new AnthropicRequest(
                 chatRequest.model(),
                 convertChatMessagesToAnthropicMessage(chatRequest),
-                toMaxTokens(chatRequest.maxTokens())
+                toMaxTokens(chatRequest.maxTokens()),
+                false
+        );
+    }
+
+    public AnthropicRequest toWire(ChatRequest chatRequest, boolean stream) {
+        return new AnthropicRequest(
+                chatRequest.model(),
+                convertChatMessagesToAnthropicMessage(chatRequest),
+                toMaxTokens(chatRequest.maxTokens()),
+                stream
         );
     }
 
