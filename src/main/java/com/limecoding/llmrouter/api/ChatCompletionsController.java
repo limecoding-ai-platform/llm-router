@@ -1,7 +1,7 @@
 package com.limecoding.llmrouter.api;
 
-import com.limecoding.llmrouter.api.dto.OpenAiChatRequest;
-import com.limecoding.llmrouter.api.dto.OpenAiChatResponse;
+import com.limecoding.llmrouter.api.dto.chat.OpenAiChatRequest;
+import com.limecoding.llmrouter.api.dto.chat.OpenAiChatResponse;
 import com.limecoding.llmrouter.api.mapper.ChatCompletionChunkResponse;
 import com.limecoding.llmrouter.config.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.*;

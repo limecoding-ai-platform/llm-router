@@ -1,4 +1,4 @@
-package com.limecoding.llmrouter.api.dto;
+package com.limecoding.llmrouter.api.dto.chat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
