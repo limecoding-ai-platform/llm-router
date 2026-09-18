@@ -6,14 +6,14 @@ public record ModelRef(String provider, String model, String original) {
 
     public static ModelRef parse(String raw) {
         if (raw == null || raw.isBlank()) {
-            throw new IllegalArgumentException("ModelRef cannot be null or empty");
+            throw new InvalidModelRefException(raw);
         }
 
         String trimmed = raw.trim();
         int i = trimmed.indexOf('/');
 
         if (i <= 0 || i == trimmed.length() - 1) {
-            throw new IllegalArgumentException("model must be in 'provider/model' form, but was: " + raw);
+            throw new InvalidModelRefException(raw);
         }
 
         return new ModelRef(
