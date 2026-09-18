@@ -5,7 +5,9 @@ import com.limecoding.llmrouter.api.dto.chat.OpenAiChatResponse;
 import com.limecoding.llmrouter.api.mapper.ChatCompletionChunkResponse;
 import com.limecoding.llmrouter.config.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.*;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +30,20 @@ public class ChatCompletionsController {
     }
 
     @PostMapping("/chat/completions")
-    public OpenAiChatResponse chat(@RequestBody OpenAiChatRequest request) {
+    public ResponseEntity<?> chat(@RequestBody OpenAiChatRequest request) {
+        if (Boolean.TRUE.equals(request.stream())) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_EVENT_STREAM)
+                    .cacheControl(CacheControl.noCache())
+                    .body(chatStream(request));
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(chatCompletion(request));
+    }
+
+    private OpenAiChatResponse chatCompletion(OpenAiChatRequest request) {
         ModelRef parse = ModelRef.parse(request.model());
         ChatRequest domain = toDomain(request, parse.model());
         ChatResponse chat = registry.get(parse.provider()).chat(domain);
@@ -36,8 +51,8 @@ public class ChatCompletionsController {
         return toApi(chat);
     }
 
-    @PostMapping(value = "/chat/stream", produces = "text/event-stream")
-    public SseEmitter stream(@RequestBody OpenAiChatRequest request) {
+
+    private SseEmitter chatStream(OpenAiChatRequest request) {
         var emitter = new SseEmitter(0L);
         String id = "chatcmpl-" + UUID.randomUUID().toString().replace("-", "");
         long created = Instant.now().getEpochSecond();
