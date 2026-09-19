@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
 public class AnthropicAdapter implements ProviderAdapter {
     private final AnthropicMapper mapper;
     private final ObjectMapper objectMapper;
@@ -29,7 +28,7 @@ public class AnthropicAdapter implements ProviderAdapter {
     public AnthropicAdapter(
             AnthropicMapper mapper,
             ObjectMapper objectMapper,
-            @Qualifier("anthropicRestClient") RestClient restClient) {
+            RestClient restClient) {
         this.mapper = mapper;
         this.objectMapper = objectMapper;
         this.restClient = restClient;

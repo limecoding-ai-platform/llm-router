@@ -7,9 +7,7 @@ import com.limecoding.llmrouter.core.model.StreamEvent;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiChunk;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiRequest;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiResponse;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -18,7 +16,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-@Component
 public class OpenAiAdapter implements ProviderAdapter {
     private final OpenAiStreamMapper streamMapper;
     private final OpenAiMapper mapper;
@@ -29,7 +26,7 @@ public class OpenAiAdapter implements ProviderAdapter {
             OpenAiMapper mapper,
             OpenAiStreamMapper streamMapper,
             ObjectMapper objectMapper,
-            @Qualifier("openAiRestClient") RestClient restClient) {
+            RestClient restClient) {
         this.mapper = mapper;
         this.streamMapper = streamMapper;
         this.objectMapper = objectMapper;

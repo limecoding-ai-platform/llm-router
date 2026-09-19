@@ -1,6 +1,6 @@
-package com.limecoding.llmrouter.config;
+package com.limecoding.llmrouter.core;
 
-import com.limecoding.llmrouter.core.ProviderAdapter;
+import com.limecoding.llmrouter.core.model.UnKnownProviderException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -22,11 +22,7 @@ public class ProviderRegistry {
 
     public ProviderAdapter get(String id) {
         ProviderAdapter adapter = adapters.get(id);
-
-        if (adapter == null) {
-            throw new RuntimeException("Provider with id " + id + " not found");
-//            throw new UnknownProviderException("Provider with id " + id + " not found");
-        }
+        if (adapter == null) throw new UnKnownProviderException(id);
 
         return adapter;
     }

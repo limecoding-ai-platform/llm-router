@@ -11,7 +11,6 @@ import java.util.List;
 
 import static com.limecoding.llmrouter.core.model.StreamEvent.*;
 
-@Component
 public class OpenAiStreamMapper {
 
     public List<StreamEvent> toEvents(OpenAiChunk chunk) {

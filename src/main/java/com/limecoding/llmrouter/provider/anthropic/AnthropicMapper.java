@@ -4,12 +4,10 @@ import com.limecoding.llmrouter.core.model.*;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicMessage;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicRequest;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicResponse;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Locale;
 
-@Component
 public class AnthropicMapper {
 
     // Anthropic은 max_tokens가 필수라 미지정 시 기본값을 채워준다.

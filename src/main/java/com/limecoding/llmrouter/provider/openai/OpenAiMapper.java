@@ -4,12 +4,20 @@ import com.limecoding.llmrouter.core.model.*;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiMessage;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiRequest;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiResponse;
-import org.springframework.stereotype.Component;
 
 import java.util.Locale;
+import java.util.Map;
 
-@Component
+
 public class OpenAiMapper {
+
+    private final Map<String, MaxTokensParam> dialects;
+
+    public OpenAiMapper(Map<String, MaxTokensParam> dialects) {
+        this.dialects = Map.copyOf(dialects);
+    }
+
+
 
     public OpenAiRequest toWire(ChatRequest chatRequest) {
         var messages = chatRequest.messages().stream()

@@ -3,7 +3,7 @@ package com.limecoding.llmrouter.api;
 import com.limecoding.llmrouter.api.dto.chat.OpenAiChatRequest;
 import com.limecoding.llmrouter.api.dto.chat.OpenAiChatResponse;
 import com.limecoding.llmrouter.api.mapper.ChatCompletionChunkResponse;
-import com.limecoding.llmrouter.config.ProviderRegistry;
+import com.limecoding.llmrouter.core.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.*;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
