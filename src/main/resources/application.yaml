@@ -8,6 +8,9 @@ spring:
 
 
 router:
+  auth:
+    api-keys:
+      - ${ROUTER_API_KEY}
   providers:
     openai:
       api-key: ${OPENAI_API_KEY}
