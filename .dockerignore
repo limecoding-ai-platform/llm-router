@@ -1,0 +1,26 @@
+# Build outputs / caches (rebuilt inside the container)
+build
+.gradle
+
+# IDE / tool settings
+.idea
+*.iml
+.claude
+.codex
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Documentation
+docs
+*.md
+
+# Docker files
+Dockerfile
+.dockerignore

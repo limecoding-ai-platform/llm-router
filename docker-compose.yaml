@@ -1,0 +1,24 @@
+services:
+  router:
+    build: .
+    image: llmrouter:local
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    stop_grace_period: 35s
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    environment:
+      - WEBUI_AUTH=False
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    depends_on:
+      - router
+
+volumes:
+  open-webui:
+    external: true
