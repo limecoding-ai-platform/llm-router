@@ -1,7 +1,6 @@
 services:
   router:
-    build: .
-    image: llmrouter:local
+    image: ${ROUTER_IMAGE:?ROUTER_IMAGE must be set}
     env_file:
       - .env
     ports:
