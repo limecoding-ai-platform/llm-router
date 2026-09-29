@@ -18,30 +18,59 @@ public class OpenAiMapper {
     }
 
 
-
     public OpenAiRequest toWire(ChatRequest chatRequest) {
+        MaxTokensParam dialect = dialects.get(chatRequest.model());
+
+        if (dialect == null) {
+            throw new IllegalArgumentException(
+                    "토큰 파라미터 설정이 없는 모델입니다: " + chatRequest.model());
+        }
+
         var messages = chatRequest.messages().stream()
                 .map(this::toWire)
                 .toList();
 
-        return new OpenAiRequest(
-                chatRequest.model(),
-                messages,
-                chatRequest.maxTokens(),
-                false);
+        return switch (dialect) {
+            case MAX_TOKENS -> new OpenAiRequest(
+                    chatRequest.model(),
+                    messages,
+                    chatRequest.maxTokens(),
+                    null,
+                    false
+            );
+            case MAX_COMPLETION_TOKENS -> new OpenAiRequest(
+                    chatRequest.model(),
+                    messages,
+                    null,
+                    chatRequest.maxTokens(),
+                    false
+            );
+        };
     }
 
     public OpenAiRequest toWire(ChatRequest chatRequest, boolean stream) {
+        var dialect = dialects.get(chatRequest.model());
+
         var messages = chatRequest.messages().stream()
                 .map(this::toWire)
                 .toList();
 
-        return new OpenAiRequest(
-                chatRequest.model(),
-                messages,
-                chatRequest.maxTokens(),
-                stream
-        );
+        return switch (dialect) {
+            case MAX_TOKENS -> new OpenAiRequest(
+                    chatRequest.model(),
+                    messages,
+                    chatRequest.maxTokens(),
+                    null,
+                    stream
+            );
+            case MAX_COMPLETION_TOKENS -> new OpenAiRequest(
+                    chatRequest.model(),
+                    messages,
+                    null,
+                    chatRequest.maxTokens(),
+                    stream
+            );
+        };
     }
 
     public ChatResponse toDomain(OpenAiResponse wire) {
