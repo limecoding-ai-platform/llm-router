@@ -60,3 +60,54 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/llm-router:${{ github.sha }}
+  deploy:
+    name: Deploy to EC2
+    needs: publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy router
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "ubuntu@$EC2_HOST" \
+            "bash -s -- '$IMAGE_TAG'" <<'REMOTE'
+          set -euo pipefail
+
+          cd /home/ubuntu/llm-router
+
+          export ROUTER_IMAGE="limecoding0/llm-router:$1"
+
+          docker compose pull router
+
+          printf 'ROUTER_IMAGE=%s\n' "$ROUTER_IMAGE" > deploy.env.tmp
+          mv deploy.env.tmp deploy.env
+
+          docker compose --env-file deploy.env up -d --no-deps router
+          docker compose --env-file deploy.env ps router
+          REMOTE
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
