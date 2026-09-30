@@ -61,53 +61,134 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/llm-router:${{ github.sha }}
   deploy:
-    name: Deploy to EC2
+    name: Deploy to EC2 via SSM
     needs: publish
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    permissions:
+      contents: read
+      id-token: write
 
     concurrency:
       group: deploy-production
       cancel-in-progress: false
 
-    steps:
-      - name: Configure SSH
-        env:
-          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+    env:
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      IMAGE_TAG: ${{ github.sha }}
+      AWS_PAGER: ""
 
-      - name: Deploy router
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: github-deploy-${{ github.run_id }}
+
+      - name: Send deployment command
+        id: deploy
+        shell: bash
         run: |
-          ssh -i ~/.ssh/deploy_key \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o ConnectTimeout=15 \
-            "ubuntu@$EC2_HOST" \
-            "bash -s -- '$IMAGE_TAG'" <<'REMOTE'
+          set -euo pipefail
+
+          # SSM에서 실행할 스크립트 작성
+          cat > deploy.sh <<'SCRIPT'
           set -euo pipefail
 
           cd /home/ubuntu/llm-router
-
           export ROUTER_IMAGE="limecoding0/llm-router:$1"
 
+          show_failure_logs() {
+            docker compose logs --no-color --tail=100 router || true
+          }
+          trap show_failure_logs ERR
+
           docker compose pull router
+
+          docker compose up -d --no-deps \
+            --wait --wait-timeout 120 router
 
           printf 'ROUTER_IMAGE=%s\n' "$ROUTER_IMAGE" > deploy.env.tmp
           mv deploy.env.tmp deploy.env
 
-          docker compose --env-file deploy.env up -d --no-deps router
           docker compose --env-file deploy.env ps router
-          REMOTE
+          SCRIPT
 
-      - name: Remove SSH key
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+          # 기존 배포와 동일하게 ubuntu 사용자로 실행
+          {
+            printf "sudo -u ubuntu -H bash -s -- '%s' <<'DEPLOY_SCRIPT'\n" "$IMAGE_TAG"
+            cat deploy.sh
+            printf '\nDEPLOY_SCRIPT\n'
+          } > command.sh
+
+          jq -n --rawfile command command.sh \
+            '{commands: [$command], executionTimeout: ["900"]}' \
+            > parameters.json
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy llm-router ${IMAGE_TAG}" \
+            --timeout-seconds 120 \
+            --parameters file://parameters.json \
+            --query 'Command.CommandId' \
+            --output text)
+
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+          echo "SSM command ID: $COMMAND_ID"
+
+      - name: Wait for deployment and print logs
+        env:
+          COMMAND_ID: ${{ steps.deploy.outputs.command_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 最大20分、10秒間隔で結果を確認
+          for attempt in $(seq 1 120); do
+            if aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$EC2_INSTANCE_ID" \
+              --output json > result.json 2> error.txt; then
+
+              STATUS=$(jq -r '.Status' result.json)
+              echo "Deployment status: $STATUS"
+
+              case "$STATUS" in
+                Pending|InProgress|Delayed)
+                  ;;
+                *)
+                  echo "::group::Deployment stdout"
+                  jq -r '.StandardOutputContent // ""' result.json
+                  echo "::endgroup::"
+
+                  echo "::group::Deployment stderr"
+                  jq -r '.StandardErrorContent // ""' result.json
+                  echo "::endgroup::"
+
+                  if [ "$STATUS" = "Success" ] &&
+                     [ "$(jq -r '.ResponseCode' result.json)" = "0" ]; then
+                    echo "Deployment completed."
+                    exit 0
+                  fi
+
+                  echo "::error::Deployment failed: $STATUS"
+                  exit 1
+                  ;;
+              esac
+            else
+              # 명령 전송 직후에는 조회 결과가 아직 없을 수 있음
+              if ! grep -q 'InvocationDoesNotExist' error.txt; then
+                cat error.txt >&2
+                exit 1
+              fi
+            fi
+
+            sleep 10
+          done
+
+          echo "::error::Timed out waiting for deployment. Check SSM Run Command."
+          exit 1
