@@ -18,10 +18,14 @@ public record OpenAiChatRequest(
         @JsonProperty("tool_choice") JsonNode toolChoice, // 도구 선택
         @JsonProperty("max_tokens") Integer maxTokens,
         @JsonProperty("temperature") Double temperature,
-        Boolean stream
+        Boolean stream,
+        @JsonProperty("stream_options") StreamOptions streamOptions
 ) {
     public OpenAiChatRequest {
         tools = tools == null ? List.of() : tools;
+    }
+
+    public record StreamOptions(@JsonProperty("include_usage") Boolean includeUsage) {
     }
 
     public record OpenAiMessage(

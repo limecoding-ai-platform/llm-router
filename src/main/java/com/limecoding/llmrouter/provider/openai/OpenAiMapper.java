@@ -21,6 +21,10 @@ public class OpenAiMapper {
 
 
     public OpenAiRequest toWire(ChatRequest chatRequest) {
+        return toWire(chatRequest, false);
+    }
+
+    public OpenAiRequest toWire(ChatRequest chatRequest, boolean stream) {
         MaxTokensParam dialect = dialects.get(chatRequest.model());
 
         if (dialect == null) {
@@ -54,7 +58,8 @@ public class OpenAiMapper {
                     chatRequest.toolChoice(),
                     chatRequest.maxTokens(),
                     null,
-                    false
+                    stream,
+                    stream && chatRequest.includeUsage() ? new OpenAiRequest.StreamOptions(true) : null
             );
             case MAX_COMPLETION_TOKENS -> new OpenAiRequest(
                     chatRequest.model(),
@@ -63,51 +68,8 @@ public class OpenAiMapper {
                     chatRequest.toolChoice(),
                     null,
                     chatRequest.maxTokens(),
-                    false
-            );
-        };
-    }
-
-    public OpenAiRequest toWire(ChatRequest chatRequest, boolean stream) {
-        var dialect = dialects.get(chatRequest.model());
-
-        var messages = chatRequest.messages().stream()
-                .map(this::toWire)
-                .toList();
-
-        List<OpenAiTool> openAiTool = chatRequest.tools().stream().map(tool -> {
-
-            OpenAiTool.OpenAiFunction function = new OpenAiTool.OpenAiFunction(
-                    tool.function().name(),
-                    tool.function().description(),
-                    tool.function().parameters(),
-                    tool.function().strict()
-            );
-
-            return new OpenAiTool(
-                    tool.type(),
-                    function
-            );
-        }).toList();
-
-        return switch (dialect) {
-            case MAX_TOKENS -> new OpenAiRequest(
-                    chatRequest.model(),
-                    messages,
-                    openAiTool,
-                    chatRequest.toolChoice(),
-                    chatRequest.maxTokens(),
-                    null,
-                    stream
-            );
-            case MAX_COMPLETION_TOKENS -> new OpenAiRequest(
-                    chatRequest.model(),
-                    messages,
-                    openAiTool,
-                    chatRequest.toolChoice(),
-                    null,
-                    chatRequest.maxTokens(),
-                    stream
+                    stream,
+                    stream && chatRequest.includeUsage() ? new OpenAiRequest.StreamOptions(true) : null
             );
         };
     }

@@ -20,12 +20,31 @@ public record ChatCompletionChunkResponse(
             @JsonProperty("finish_reason") String finishReason) {
     }
 
-    public record Delta(String role, String content) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Delta(String role, String content, String refusal,
+                        @JsonProperty("tool_calls") List<ToolCall> toolCalls) {
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ToolCall(int index, String id, String type, FunctionDelta function) {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record FunctionDelta(String name, String arguments) {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Usage(
             @JsonProperty("prompt_tokens") Integer promptTokens,
             @JsonProperty("completion_tokens") Integer completionTokens,
-            @JsonProperty("total_tokens") Integer totalTokens) {
+            @JsonProperty("total_tokens") Integer totalTokens,
+            @JsonProperty("prompt_tokens_details") PromptTokensDetails promptTokensDetails,
+            @JsonProperty("completion_tokens_details") CompletionTokensDetails completionTokensDetails) {
+    }
+
+    public record PromptTokensDetails(@JsonProperty("cached_tokens") int cachedTokens) {
+    }
+
+    public record CompletionTokensDetails(@JsonProperty("reasoning_tokens") int reasoningTokens) {
     }
 }

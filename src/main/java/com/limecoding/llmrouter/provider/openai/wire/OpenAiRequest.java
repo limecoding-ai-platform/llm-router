@@ -15,6 +15,9 @@ public record OpenAiRequest(
         @JsonProperty("tool_choice") JsonNode toolChoice, // 도구 선택
         @JsonProperty("max_tokens") Integer maxTokens,  // 최대 토큰 수
         @JsonProperty("max_completion_tokens") Integer maxCompletionTokens, // 최대 완료 토큰 수
-        boolean stream  // 스트림 여부
+        boolean stream,  // 스트림 여부
+        @JsonProperty("stream_options") StreamOptions streamOptions
 ) {
+    public record StreamOptions(@JsonProperty("include_usage") boolean includeUsage) {
+    }
 }
