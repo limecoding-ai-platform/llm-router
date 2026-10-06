@@ -1,9 +1,11 @@
 package com.limecoding.llmrouter.api.dto.chat;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.limecoding.llmrouter.provider.openai.wire.OpenAiTool;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import tools.jackson.databind.JsonNode;
@@ -33,10 +35,17 @@ public record OpenAiChatRequest(
             String content,
             @JsonProperty("tool_calls") List<ToolCall> toolCalls,
             String refusal,
-            List<JsonNode> annotations
+            List<JsonNode> annotations,
+            @JsonProperty("tool_call_id") String toolCallId
     ) {
         public OpenAiMessage {
             toolCalls = toolCalls == null ? List.of() : toolCalls;
+        }
+
+        @JsonIgnore
+        @AssertTrue(message = "tool_call_id must not be blank for tool messages")
+        public boolean isToolCallIdValid() {
+            return !"tool".equalsIgnoreCase(role) || (toolCallId != null && !toolCallId.isBlank());
         }
 
         public record ToolCall(

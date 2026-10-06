@@ -5,6 +5,8 @@ import com.limecoding.llmrouter.core.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.ChatRequest;
 import com.limecoding.llmrouter.core.model.Message;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -30,6 +32,66 @@ class OpenAiStreamingTest {
     private final RestClient.Builder builder = RestClient.builder().baseUrl("https://openai.test");
     private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
     private final OpenAiAdapter adapter = new OpenAiAdapter(mapper, new OpenAiStreamMapper(), json, builder.build());
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void forwardsToolResultsWithOriginalCallIds(boolean streaming) throws Exception {
+        server.expect(requestTo("https://openai.test/chat/completions"))
+                .andExpect(request -> {
+                    var body = json.readTree(((MockClientHttpRequest) request).getBodyAsString());
+                    assertEquals(streaming, body.get("stream").asBoolean());
+                    var messages = body.get("messages");
+                    assertEquals(4, messages.size());
+                    assertFalse(messages.get(0).has("tool_call_id"));
+                    assertFalse(messages.get(1).has("tool_call_id"));
+                    var calls = messages.get(1).get("tool_calls");
+                    for (int i = 0; i < 2; i++) {
+                        var result = messages.get(i + 2);
+                        assertEquals("tool", result.get("role").stringValue());
+                        assertEquals(calls.get(i).get("id"), result.get("tool_call_id"));
+                        assertEquals(i == 0 ? "서울 23도" : "부산 25도", result.get("content").stringValue());
+                        assertFalse(result.has("tool_calls"));
+                    }
+                })
+                .andRespond(withSuccess(streaming
+                        ? chunk(0, "{\"content\":\"weather received\"}", "stop") + "data: [DONE]\n\n"
+                        : """
+                        {"id":"id","created":0,"model":"test","choices":[{"index":0,
+                        "message":{"role":"assistant","content":"weather received"},"finish_reason":"stop"}],
+                        "usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}
+                        """, streaming ? MediaType.TEXT_EVENT_STREAM : MediaType.APPLICATION_JSON));
+        String body = """
+                {"model":"openai/test","stream":%s,"messages":[
+                {"role":"user","content":"서울과 부산 날씨"},
+                {"role":"assistant","tool_calls":[
+                  {"id":"call-a","type":"function","function":{"name":"get_weather","arguments":"{}"}},
+                  {"id":"call-b","type":"function","function":{"name":"get_weather","arguments":"{}"}}]},
+                {"role":"tool","tool_call_id":"call-a","content":"서울 23도"},
+                {"role":"tool","tool_call_id":"call-b","content":"부산 25도"}]}
+                """.formatted(streaming);
+        if (streaming) {
+            assertEquals("weather received", stream(body).getFirst().get("choices").get(0).get("delta").get("content").stringValue());
+        } else {
+            var mvc = MockMvcBuilders.standaloneSetup(new ChatCompletionsController(new ProviderRegistry(List.of(adapter)))).build();
+            mvc.perform(post("/v1/chat/completions").contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.choices[0].message.content").value("weather received"));
+        }
+        server.verify();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void rejectsToolResultsWithoutCallId(boolean streaming) throws Exception {
+        var mvc = MockMvcBuilders.standaloneSetup(new ChatCompletionsController(new ProviderRegistry(List.of(adapter)))).build();
+        for (String field : List.of("", ",\"tool_call_id\":null", ",\"tool_call_id\":\"\"", ",\"tool_call_id\":\"  \"")) {
+            mvc.perform(post("/v1/chat/completions").contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"model\":\"openai/test\",\"stream\":" + streaming
+                                    + ",\"messages\":[{\"role\":\"tool\",\"content\":\"result\"" + field + "}]}"))
+                    .andExpect(status().isBadRequest());
+        }
+        server.verify();
+    }
 
     @Test
     void streamsInterleavedToolArgumentsAndUsageThroughHttp() throws Exception {

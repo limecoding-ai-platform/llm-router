@@ -168,7 +168,8 @@ public class ChatCompletionsController {
                 message.content(),
                 toolCall,
                 message.refusal(),
-                message.annotations()
+                message.annotations(),
+                message.toolCallId()
         );
     }
 

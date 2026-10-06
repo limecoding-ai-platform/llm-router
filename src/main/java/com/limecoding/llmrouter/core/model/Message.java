@@ -9,7 +9,8 @@ public record Message(
         String content,
         List<ToolCall> toolCalls,
         String refusal,
-        List<JsonNode> annotations
+        List<JsonNode> annotations,
+        String toolCallId
 ) {
     public Message {
         toolCalls = toolCalls == null ? List.of() : toolCalls;
@@ -36,6 +37,7 @@ public record Message(
                 content,
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -51,7 +53,8 @@ public record Message(
                 content,
                 toolCalls,
                 refusal,
-                annotations
+                annotations,
+                null
         );
     }
 }
