@@ -5,6 +5,7 @@ import com.limecoding.llmrouter.api.dto.chat.OpenAiChatResponse;
 import com.limecoding.llmrouter.api.mapper.ChatCompletionChunkResponse;
 import com.limecoding.llmrouter.core.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.*;
+import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class ChatCompletionsController {
     }
 
     @PostMapping("/chat/completions")
-    public ResponseEntity<?> chat(@RequestBody OpenAiChatRequest request) {
+    public ResponseEntity<?> chat(@Valid @RequestBody OpenAiChatRequest request) {
         if (Boolean.TRUE.equals(request.stream())) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_EVENT_STREAM)
@@ -63,6 +64,7 @@ public class ChatCompletionsController {
         Thread.startVirtualThread(() -> {
             try {
                 adapter.stream(domain, event -> {
+                    if (event instanceof StreamEvent.UsageReported && !domain.includeUsage()) return;
                     try {
                         emitter.send(SseEmitter.event()
                                 .data(toChunk(event, id, ref.original(), created),
@@ -74,8 +76,6 @@ public class ChatCompletionsController {
                 });
                 emitter.send(SseEmitter.event().data("[DONE]"));
                 emitter.complete();
-//            } catch (ClientGoneException e) {
-//                emitter.complete();
             } catch (Exception e) {
                 emitter.completeWithError(e);
             }
@@ -86,11 +86,31 @@ public class ChatCompletionsController {
 
     private ChatRequest toDomain(OpenAiChatRequest request, String model) {
         List<Message> messages = request.messages().stream().map(this::toDomain).toList();
+
+        List<Tool> tools = request.tools().stream().map(tool -> {
+
+            Tool.Function function = new Tool.Function(
+                    tool.function().name(),
+                    tool.function().description(),
+                    tool.function().parameters(),
+                    tool.function().strict()
+            );
+
+            return new Tool(
+                    tool.type(),
+                    function
+            );
+        }).toList();
+
         return new ChatRequest(
                 model,
                 messages,
+                tools,
+                request.toolChoice(),
                 request.maxTokens(),
-                request.temperature()
+                request.temperature(),
+                Boolean.TRUE.equals(request.stream()) && request.streamOptions() != null
+                        && Boolean.TRUE.equals(request.streamOptions().includeUsage())
         );
     }
 
@@ -100,7 +120,14 @@ public class ChatCompletionsController {
                 0,
                 new OpenAiChatResponse.OpenAIChatMessage(
                         message.role().name().toLowerCase(Locale.ROOT),
-                        message.content()),
+                        message.content(),
+                        message.toolCalls().stream()
+                                .map(tool -> new OpenAiChatResponse.ToolCall(
+                                        tool.id(),
+                                        tool.type(),
+                                        new OpenAiChatResponse.FunctionCall(
+                                                tool.function().name(), tool.function().arguments())))
+                                .toList()),
                 toWireFinishReason(chat.finishReason())
         );
 
@@ -121,9 +148,27 @@ public class ChatCompletionsController {
     }
 
     private Message toDomain(OpenAiChatRequest.OpenAiMessage message) {
+
+        List<Message.ToolCall> toolCall = message.toolCalls().stream().map(tool -> {
+
+            Message.FunctionCall functionCall = new Message.FunctionCall(
+                    tool.function().name(),
+                    tool.function().arguments()
+            );
+
+            return new Message.ToolCall(
+                    tool.id(),
+                    tool.type(),
+                    functionCall
+            );
+        }).toList();
+
         return new Message(
                 Role.valueOf(message.role().toUpperCase(Locale.ROOT)),
-                message.content()
+                message.content(),
+                toolCall,
+                message.refusal(),
+                message.annotations()
         );
     }
 
@@ -139,37 +184,48 @@ public class ChatCompletionsController {
     private ChatCompletionChunkResponse toChunk(StreamEvent event, String id,
                                                 String model, long created) {
         return switch (event) {
+            case StreamEvent.RoleDelta d -> new ChatCompletionChunkResponse(
+                    id, "chat.completion.chunk", created, model,
+                    List.of(new ChatCompletionChunkResponse.Choice(d.choiceIndex(),
+                            new ChatCompletionChunkResponse.Delta(d.role(), null, null, null), null)), null);
             case StreamEvent.TextDelta d -> new ChatCompletionChunkResponse(
                     id, "chat.completion.chunk", created, model,
-                    List.of(new ChatCompletionChunkResponse.Choice(0, new ChatCompletionChunkResponse.Delta(null, d.text()), null)),
+                    List.of(new ChatCompletionChunkResponse.Choice(d.choiceIndex(), new ChatCompletionChunkResponse.Delta(null, d.text(), null, null), null)),
+                    null);
+            case StreamEvent.RefusalDelta d -> new ChatCompletionChunkResponse(
+                    id, "chat.completion.chunk", created, model,
+                    List.of(new ChatCompletionChunkResponse.Choice(d.choiceIndex(),
+                            new ChatCompletionChunkResponse.Delta(null, null, d.refusal(), null), null)), null);
+            case StreamEvent.ToolCallDelta d -> new ChatCompletionChunkResponse(
+                    id, "chat.completion.chunk", created, model,
+                    List.of(new ChatCompletionChunkResponse.Choice(d.choiceIndex(),
+                            new ChatCompletionChunkResponse.Delta(null, null, null,
+                                    d.toolCalls().stream().map(call -> new ChatCompletionChunkResponse.ToolCall(
+                                            call.index(), call.id(), call.type(),
+                                            call.function() == null ? null : new ChatCompletionChunkResponse.FunctionDelta(
+                                                    call.function().name(), call.function().arguments()))).toList()), null)),
                     null);
 
             case StreamEvent.Finished f -> new ChatCompletionChunkResponse(
                     id, "chat.completion.chunk", created, model,
-                    List.of(new ChatCompletionChunkResponse.Choice(0, new ChatCompletionChunkResponse.Delta(null, null), toWire(f.reason()))),
+                    List.of(new ChatCompletionChunkResponse.Choice(f.choiceIndex(), new ChatCompletionChunkResponse.Delta(null, null, null, null), toWireFinishReason(f.reason()))),
                     null);
 
             case StreamEvent.UsageReported u -> new ChatCompletionChunkResponse(
                     id, "chat.completion.chunk", created, model,
-                    List.of(),                                    // ← 빈 배열
-                    toWireUsage(u.usage()));
+                    List.of(),
+                    toWireUsage(u));
         };
     }
 
-    private String toWire(FinishReason r) {
-        return switch (r) {
-            case STOP -> "stop";
-            case LENGTH -> "length";
-            case CONTENT_FILTER -> "content_filter";
-            case TOOL_CALLS -> "tool_calls";
-        };
-    }
-
-    private ChatCompletionChunkResponse.Usage toWireUsage(Usage usage) {
+    private ChatCompletionChunkResponse.Usage toWireUsage(StreamEvent.UsageReported event) {
+        var usage = event.usage();
         return new ChatCompletionChunkResponse.Usage(
                 usage.promptTokens(),
                 usage.completionTokens(),
-                usage.totalTokens()      // ← 도메인이 계산해준 값
+                usage.totalTokens(),
+                event.cachedTokens() == null ? null : new ChatCompletionChunkResponse.PromptTokensDetails(event.cachedTokens()),
+                event.reasoningTokens() == null ? null : new ChatCompletionChunkResponse.CompletionTokensDetails(event.reasoningTokens())
         );
     }
 }

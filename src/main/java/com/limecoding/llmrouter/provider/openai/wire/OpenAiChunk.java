@@ -25,7 +25,24 @@ public record OpenAiChunk(
     public record Delta(
             String role,
             String content,
-            String refusal
+            String refusal,
+            @JsonProperty("tool_calls") List<ToolCallDelta> toolCalls
+    ) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ToolCallDelta(
+            Integer index,
+            String id,
+            String type,
+            FunctionDelta function
+    ) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FunctionDelta(
+            String name,
+            String arguments
     ) {
     }
 
