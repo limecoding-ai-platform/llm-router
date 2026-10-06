@@ -13,7 +13,8 @@ public record OpenAiMessage(
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
         @JsonProperty("tool_calls") List<ToolCall> toolCalls,
         String refusal,
-        List<JsonNode> annotations
+        List<JsonNode> annotations,
+        @JsonProperty("tool_call_id") String toolCallId
 ) {
     public OpenAiMessage {
         toolCalls = toolCalls == null ? List.of() : toolCalls;

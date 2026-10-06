@@ -130,7 +130,8 @@ public class OpenAiMapper {
                 message.content(),
                 openAiToolCall,
                 message.refusal(),
-                message.annotations()
+                message.annotations(),
+                message.toolCallId()
         );
     }
 
