@@ -1,5 +1,6 @@
 package com.limecoding.llmrouter.api.dto.chat;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -25,6 +26,14 @@ public record OpenAiChatResponse(
 
     public record OpenAIChatMessage(
             String role,
-            String content) {
+            String content,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY)
+            @JsonProperty("tool_calls") List<ToolCall> toolCalls) {
+    }
+
+    public record ToolCall(String id, String type, FunctionCall function) {
+    }
+
+    public record FunctionCall(String name, String arguments) {
     }
 }

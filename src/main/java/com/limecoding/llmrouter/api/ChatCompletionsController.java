@@ -5,6 +5,7 @@ import com.limecoding.llmrouter.api.dto.chat.OpenAiChatResponse;
 import com.limecoding.llmrouter.api.mapper.ChatCompletionChunkResponse;
 import com.limecoding.llmrouter.core.ProviderRegistry;
 import com.limecoding.llmrouter.core.model.*;
+import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class ChatCompletionsController {
     }
 
     @PostMapping("/chat/completions")
-    public ResponseEntity<?> chat(@RequestBody OpenAiChatRequest request) {
+    public ResponseEntity<?> chat(@Valid @RequestBody OpenAiChatRequest request) {
         if (Boolean.TRUE.equals(request.stream())) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_EVENT_STREAM)
@@ -86,9 +87,27 @@ public class ChatCompletionsController {
 
     private ChatRequest toDomain(OpenAiChatRequest request, String model) {
         List<Message> messages = request.messages().stream().map(this::toDomain).toList();
+
+        List<Tool> tools = request.tools().stream().map(tool -> {
+
+            Tool.Function function = new Tool.Function(
+                    tool.function().name(),
+                    tool.function().description(),
+                    tool.function().parameters(),
+                    tool.function().strict()
+            );
+
+            return new Tool(
+                    tool.type(),
+                    function
+            );
+        }).toList();
+
         return new ChatRequest(
                 model,
                 messages,
+                tools,
+                request.toolChoice(),
                 request.maxTokens(),
                 request.temperature()
         );
@@ -100,7 +119,14 @@ public class ChatCompletionsController {
                 0,
                 new OpenAiChatResponse.OpenAIChatMessage(
                         message.role().name().toLowerCase(Locale.ROOT),
-                        message.content()),
+                        message.content(),
+                        message.toolCalls().stream()
+                                .map(tool -> new OpenAiChatResponse.ToolCall(
+                                        tool.id(),
+                                        tool.type(),
+                                        new OpenAiChatResponse.FunctionCall(
+                                                tool.function().name(), tool.function().arguments())))
+                                .toList()),
                 toWireFinishReason(chat.finishReason())
         );
 
@@ -121,9 +147,27 @@ public class ChatCompletionsController {
     }
 
     private Message toDomain(OpenAiChatRequest.OpenAiMessage message) {
+
+        List<Message.ToolCall> toolCall = message.toolCalls().stream().map(tool -> {
+
+            Message.FunctionCall functionCall = new Message.FunctionCall(
+                    tool.function().name(),
+                    tool.function().arguments()
+            );
+
+            return new Message.ToolCall(
+                    tool.id(),
+                    tool.type(),
+                    functionCall
+            );
+        }).toList();
+
         return new Message(
                 Role.valueOf(message.role().toUpperCase(Locale.ROOT)),
-                message.content()
+                message.content(),
+                toolCall,
+                message.refusal(),
+                message.annotations()
         );
     }
 
