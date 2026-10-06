@@ -35,7 +35,7 @@ public class AnthropicMapper {
         return new ChatResponse(
                 wire.id(),
                 wire.model(),
-                Message.assistant(wire.content().getFirst().text()),
+                Message.assistant(wire.content().getFirst().text(), null, null, null),
                 toFinishReason(wire.stopReason()),
                 toUsage(wire.usage())
         );
