@@ -4,6 +4,8 @@ import com.limecoding.llmrouter.core.model.*;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicMessage;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicRequest;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicResponse;
+import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicTool;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 import java.util.Locale;
@@ -14,19 +16,27 @@ public class AnthropicMapper {
     private static final int DEFAULT_MAX_TOKENS = 1024;
 
     public AnthropicRequest toWire(ChatRequest chatRequest) {
+        List<Tool> tools = chatRequest.tools();
+        List<AnthropicTool> toolList = tools.stream().map(this::toAnthropicTool).toList();
+
         return new AnthropicRequest(
                 chatRequest.model(),
-                convertChatMessagesToAnthropicMessage(chatRequest),
                 toMaxTokens(chatRequest.maxTokens()),
+                toolList,
+                convertChatMessagesToAnthropicMessage(chatRequest),
                 false
         );
     }
 
     public AnthropicRequest toWire(ChatRequest chatRequest, boolean stream) {
+        List<Tool> tools = chatRequest.tools();
+        List<AnthropicTool> toolList = tools.stream().map(this::toAnthropicTool).toList();
+
         return new AnthropicRequest(
                 chatRequest.model(),
-                convertChatMessagesToAnthropicMessage(chatRequest),
                 toMaxTokens(chatRequest.maxTokens()),
+                toolList,
+                convertChatMessagesToAnthropicMessage(chatRequest),
                 stream
         );
     }
@@ -67,5 +77,19 @@ public class AnthropicMapper {
 
     private Usage toUsage(AnthropicResponse.Usage usage) {
         return new Usage(usage.inputTokens(), usage.outputTokens());
+    }
+
+    private AnthropicTool toAnthropicTool(Tool tool) {
+        String type = tool.type();
+        Tool.Function function = tool.function();
+
+        ObjectNode parameters = (ObjectNode) function.parameters();
+        ObjectNode inputSchema = parameters.put("type", type);
+
+        return AnthropicTool.builder()
+                .name(function.name())
+                .description(function.description())
+                .inputSchema(inputSchema)
+                .build();
     }
 }
