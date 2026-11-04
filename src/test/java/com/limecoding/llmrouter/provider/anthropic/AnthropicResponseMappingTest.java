@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AnthropicResponseMappingTest {
     private final JsonMapper json = JsonMapper.builder().build();
-    private final AnthropicMapper mapper = new AnthropicMapper();
+    private final AnthropicMapper mapper = new AnthropicMapper(json);
 
     @Test
     void preservesMixedTextAndMultipleToolCalls() {

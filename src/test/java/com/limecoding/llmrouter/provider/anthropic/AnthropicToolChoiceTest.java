@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AnthropicToolChoiceTest {
     private final JsonMapper json = JsonMapper.builder().build();
-    private final AnthropicMapper mapper = new AnthropicMapper();
+    private final AnthropicMapper mapper = new AnthropicMapper(json);
 
     @ParameterizedTest
     @CsvSource({"auto,auto", "none,none", "required,any"})

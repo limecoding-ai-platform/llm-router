@@ -91,7 +91,7 @@ public class ProviderConfig {
                 .build();
 
         return new AnthropicAdapter(
-                new AnthropicMapper(),
+                new AnthropicMapper(objectMapper),
                 objectMapper,
                 client
         );

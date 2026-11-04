@@ -9,6 +9,10 @@ import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicContentBlock;
 import com.limecoding.llmrouter.provider.anthropic.wire.toolchoice.AnthropicToolChoice;
 import com.limecoding.llmrouter.provider.anthropic.wire.toolchoice.ToolChoiceType;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.core.JacksonException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -18,6 +22,12 @@ public class AnthropicMapper {
 
     // Anthropic은 max_tokens가 필수라 미지정 시 기본값을 채워준다.
     private static final int DEFAULT_MAX_TOKENS = 1024;
+    private final ObjectReader argumentsReader;
+
+    public AnthropicMapper(ObjectMapper objectMapper) {
+        this.argumentsReader = objectMapper.readerFor(JsonNode.class)
+                .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+    }
 
     public AnthropicRequest toWire(ChatRequest chatRequest) {
         return toWire(chatRequest, false);
@@ -65,8 +75,29 @@ public class AnthropicMapper {
     }
 
     private List<AnthropicMessage> convertChatMessagesToAnthropicMessage(ChatRequest chatRequest) {
-        return chatRequest.messages().stream()
-                .map(this::toAnthropicMessage).toList();
+        List<AnthropicMessage> messages = new ArrayList<>();
+        List<AnthropicContentBlock> results = new ArrayList<>();
+        for (Message message : chatRequest.messages()) {
+            if (message.role() == Role.TOOL) {
+                if (message.toolCallId() == null || message.toolCallId().isBlank()) {
+                    throw new IllegalArgumentException("tool message requires a non-blank tool_call_id");
+                }
+                results.add(new AnthropicContentBlock.ToolResult(
+                        message.toolCallId(), message.content()));
+                continue;
+            }
+
+            // 병렬 도구 실행 결과는 하나의 user 메시지에 담고, 다음 대화 전에 확정한다.
+            if (!results.isEmpty()) {
+                messages.add(new AnthropicMessage("user", results));
+                results.clear();
+            }
+            messages.add(toAnthropicMessage(message));
+        }
+        if (!results.isEmpty()) {
+            messages.add(new AnthropicMessage("user", results));
+        }
+        return messages;
     }
 
     private Integer toMaxTokens(Integer maxTokens) {
@@ -74,9 +105,39 @@ public class AnthropicMapper {
     }
 
     private AnthropicMessage toAnthropicMessage(Message message) {
+        List<AnthropicContentBlock> blocks = new ArrayList<>();
+        if (message.content() != null && !message.content().isEmpty()) {
+            blocks.add(new AnthropicContentBlock.Text(message.content()));
+        }
+        if (message.role() == Role.ASSISTANT) {
+            for (Message.ToolCall call : message.toolCalls()) {
+                blocks.add(new AnthropicContentBlock.ToolUse(
+                        call.id(), call.function().name(), toToolInput(call.function().arguments())));
+            }
+        }
         return new AnthropicMessage(
                 message.role().name().toLowerCase(Locale.ROOT),
-                message.content());
+                blocks);
+    }
+
+    /**
+     * 공통 모델의 arguments JSON 문자열을 Anthropic의 input 객체로 변환한다.
+     * 예: 문자열 안의 {@code {"city":"Seoul"}}을 파싱하여 같은 구조의 JSON 객체로 전달한다.
+     */
+    private JsonNode toToolInput(String arguments) {
+        if (arguments == null || arguments.isBlank()) {
+            throw new IllegalArgumentException("tool call arguments must be a JSON object");
+        }
+        final JsonNode input;
+        try {
+            input = argumentsReader.readValue(arguments);
+        } catch (JacksonException exception) {
+            throw new IllegalArgumentException("tool call arguments must be a valid JSON object", exception);
+        }
+        if (input == null || !input.isObject()) {
+            throw new IllegalArgumentException("tool call arguments must be a JSON object");
+        }
+        return input;
     }
 
     private FinishReason toFinishReason(String reason) {
