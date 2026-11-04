@@ -5,11 +5,13 @@ import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicMessage;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicRequest;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicResponse;
 import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicTool;
+import com.limecoding.llmrouter.provider.anthropic.wire.AnthropicContentBlock;
 import com.limecoding.llmrouter.provider.anthropic.wire.toolchoice.AnthropicToolChoice;
 import com.limecoding.llmrouter.provider.anthropic.wire.toolchoice.ToolChoiceType;
 import tools.jackson.databind.JsonNode;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Locale;
 
 public class AnthropicMapper {
@@ -36,10 +38,27 @@ public class AnthropicMapper {
     }
 
     public ChatResponse toDomain(AnthropicResponse wire) {
+        // 텍스트와 도구 호출은 섞여 올 수 있으므로 모든 블록을 순서대로 확인한다.
+        List<String> texts = new ArrayList<>();
+        List<Message.ToolCall> toolCalls = new ArrayList<>();
+        for (AnthropicContentBlock block : wire.content()) {
+            switch (block) {
+                case AnthropicContentBlock.Text text -> texts.add(text.text());
+                case AnthropicContentBlock.ToolUse tool -> toolCalls.add(new Message.ToolCall(
+                        tool.id(),
+                        "function",
+                        // input은 JSON 객체지만 공통 모델의 arguments는 JSON 문자열이다.
+                        new Message.FunctionCall(tool.name(), tool.input().toString())
+                ));
+                case AnthropicContentBlock.ToolResult ignored ->
+                        throw new IllegalArgumentException("tool_result is not an assistant response block");
+            }
+        }
+
         return new ChatResponse(
                 wire.id(),
                 wire.model(),
-                Message.assistant(wire.content().getFirst().text(), null, null, null),
+                Message.assistant(texts.isEmpty() ? null : String.join("", texts), toolCalls, null, null),
                 toFinishReason(wire.stopReason()),
                 toUsage(wire.usage())
         );
