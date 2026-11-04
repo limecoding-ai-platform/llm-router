@@ -29,6 +29,11 @@ import java.util.Objects;
  * 다양한 JSON Schema 키워드와 중첩 구조를 보존하기 위해 {@link JsonNode}로 표현하며,
  * 이 클래스 자체에서 스키마의 유효성을 검증하지는 않는다.
  *
+ * <p>요청 경로는 {@code tools[].input_schema}이며, 공통 모델의
+ * {@code Tool.Function.parameters} 객체가 이 위치로 전달된다.
+ * 스키마의 {@code type: "object"}는 입력 인자의 자료형이므로,
+ * 도구 종류인 {@code Tool.type}의 {@code "function"} 값으로 덮어쓰면 안 된다.
+ *
  * @param name 호출할 도구의 이름
  * @param description 도구의 용도와 사용 조건에 대한 설명
  * @param inputSchema 입력 인자의 JSON Schema. OpenAI의 {@code function.parameters}에 대응한다.
@@ -66,6 +71,13 @@ public record AnthropicTool(
             return this;
         }
 
+        /**
+         * 입력 인자의 JSON Schema 객체를 설정한다.
+         * 예: {@code {"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}
+         *
+         * @param inputSchema 공통 모델의 {@code Tool.Function.parameters}에 해당하는 스키마
+         * @return 현재 빌더
+         */
         public Builder inputSchema(JsonNode inputSchema) {
             this.inputSchema = inputSchema;
             return this;
