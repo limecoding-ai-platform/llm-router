@@ -1,6 +1,8 @@
 package com.limecoding.llmrouter.provider.anthropic.wire;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.limecoding.llmrouter.provider.anthropic.wire.toolchoice.AnthropicToolChoice;
 
 import java.util.List;
 import java.util.Objects;
@@ -9,6 +11,7 @@ public record AnthropicRequest(
         String model,
         @JsonProperty("max_tokens") Integer maxTokens,
         List<AnthropicTool> tools,
+        @JsonProperty("tool_choice") @JsonInclude(JsonInclude.Include.NON_NULL) AnthropicToolChoice toolChoice,
         List<AnthropicMessage> messages,
         boolean stream
 ) {
@@ -27,6 +30,7 @@ public record AnthropicRequest(
         private String model;
         private Integer maxTokens;
         private List<AnthropicTool> tools;
+        private AnthropicToolChoice toolChoice;
         private List<AnthropicMessage> messages;
         private boolean stream;
 
@@ -38,6 +42,11 @@ public record AnthropicRequest(
 
         public Builder maxTokens(Integer maxTokens) {
             this.maxTokens = maxTokens;
+            return this;
+        }
+
+        public Builder toolChoice(AnthropicToolChoice toolChoice) {
+            this.toolChoice = toolChoice;
             return this;
         }
 
@@ -57,7 +66,7 @@ public record AnthropicRequest(
         }
 
         public AnthropicRequest build() {
-            return new AnthropicRequest(model, maxTokens, tools, messages, stream);
+            return new AnthropicRequest(model, maxTokens, tools, toolChoice, messages, stream);
         }
 
     }
