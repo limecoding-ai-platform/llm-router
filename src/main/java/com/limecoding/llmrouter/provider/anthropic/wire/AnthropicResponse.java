@@ -11,7 +11,7 @@ public record AnthropicResponse(
         String id,
         String type,
         String role,
-        List<Content> content,
+        List<AnthropicContentBlock> content,
         @JsonProperty("stop_reason") String stopReason,
         @JsonProperty("stop_sequence") String stopSequence,
         @JsonProperty("stop_details") String stopDetails,
@@ -34,14 +34,6 @@ public record AnthropicResponse(
             @JsonProperty("service_tier") String serviceTier,
             @JsonProperty("inference_geo") String inferenceGeo
     ) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Content(
-            String type,
-            String text
-    ) {
-
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -93,7 +93,10 @@ public sealed interface AnthropicEvent {
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ContentBlock(
             String type,
-            String text
+            String text,
+            // tool_use 시작: {"type":"tool_use","id":"toolu_...","name":"get_weather","input":{}}
+            String id,
+            String name
     ) {
 
     }
@@ -101,7 +104,9 @@ public sealed interface AnthropicEvent {
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Delta(
             String type,
-            String text
+            String text,
+            // input_json_delta: 완성된 JSON이 아닌 문자열 조각이므로 JsonNode로 파싱하지 않는다.
+            @JsonProperty("partial_json") String partialJson
     ) {
 
     }
