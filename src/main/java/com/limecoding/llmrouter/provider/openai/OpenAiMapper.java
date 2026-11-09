@@ -19,6 +19,8 @@ public class OpenAiMapper {
         this.dialects = Map.copyOf(dialects);
     }
 
+    public java.util.Set<String> modelIds() { return dialects.keySet(); }
+
 
     public OpenAiRequest toWire(ChatRequest chatRequest) {
         return toWire(chatRequest, false);
@@ -59,7 +61,8 @@ public class OpenAiMapper {
                     chatRequest.maxTokens(),
                     null,
                     stream,
-                    stream && chatRequest.includeUsage() ? new OpenAiRequest.StreamOptions(true) : null
+                    stream && chatRequest.includeUsage() ? new OpenAiRequest.StreamOptions(true) : null,
+                    chatRequest.temperature()
             );
             case MAX_COMPLETION_TOKENS -> new OpenAiRequest(
                     chatRequest.model(),
@@ -69,7 +72,8 @@ public class OpenAiMapper {
                     null,
                     chatRequest.maxTokens(),
                     stream,
-                    stream && chatRequest.includeUsage() ? new OpenAiRequest.StreamOptions(true) : null
+                    stream && chatRequest.includeUsage() ? new OpenAiRequest.StreamOptions(true) : null,
+                    chatRequest.temperature()
             );
         };
     }

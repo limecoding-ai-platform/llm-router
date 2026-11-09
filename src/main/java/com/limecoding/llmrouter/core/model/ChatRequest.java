@@ -11,7 +11,12 @@ public record ChatRequest(
         JsonNode toolChoice,
         Integer maxTokens,
         Double temperature,
-        boolean includeUsage) {
+        boolean includeUsage,
+        ApiType apiType) {
+    public ChatRequest(String model, List<Message> messages, List<Tool> tools,
+                       JsonNode toolChoice, Integer maxTokens, Double temperature, boolean includeUsage) {
+        this(model, messages, tools, toolChoice, maxTokens, temperature, includeUsage, ApiType.CHAT_COMPLETIONS);
+    }
     public ChatRequest(String model, List<Message> messages, List<Tool> tools,
                        JsonNode toolChoice, Integer maxTokens, Double temperature) {
         this(model, messages, tools, toolChoice, maxTokens, temperature, false);
@@ -22,5 +27,6 @@ public record ChatRequest(
             throw new IllegalArgumentException("messages must not be null or empty");
         }
         tools = tools == null ? List.of() : tools;
+        java.util.Objects.requireNonNull(apiType, "apiType must not be null");
     }
 }

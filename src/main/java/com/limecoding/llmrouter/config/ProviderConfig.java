@@ -70,6 +70,7 @@ public class ProviderConfig {
                 .build();
 
         Map<String, MaxTokensParam> dialects = props.models().stream()
+                .filter(model -> model.maxTokensParam() != null)
                 .collect(Collectors.toUnmodifiableMap(
                         OpenAiProperties.Model::id,
                         OpenAiProperties.Model::maxTokensParam));
@@ -78,7 +79,9 @@ public class ProviderConfig {
                 new OpenAiMapper(dialects),
                 new OpenAiStreamMapper(),
                 objectMapper,
-                client);
+                client,
+                props.models().stream().collect(Collectors.toUnmodifiableMap(
+                        OpenAiProperties.Model::id, OpenAiProperties.Model::supportedApis)));
 
     }
 

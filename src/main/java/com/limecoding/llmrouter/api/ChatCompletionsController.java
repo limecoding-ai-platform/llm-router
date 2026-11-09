@@ -47,7 +47,9 @@ public class ChatCompletionsController {
     private OpenAiChatResponse chatCompletion(OpenAiChatRequest request) {
         ModelRef parse = ModelRef.parse(request.model());
         ChatRequest domain = toDomain(request, parse.model());
-        ChatResponse chat = registry.get(parse.provider()).chat(domain);
+        var adapter = registry.get(parse.provider());
+        adapter.validateRequest(domain);
+        ChatResponse chat = adapter.chat(domain);
 
         return toApi(chat);
     }
@@ -60,6 +62,7 @@ public class ChatCompletionsController {
         ModelRef ref = ModelRef.parse(request.model());
         var domain = toDomain(request, ref.model());
         var adapter = registry.get(ref.provider());
+        adapter.validateRequest(domain);
 
         Thread.startVirtualThread(() -> {
             try {
