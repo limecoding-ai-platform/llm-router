@@ -13,7 +13,9 @@ public record AnthropicRequest(
         List<AnthropicTool> tools,
         @JsonProperty("tool_choice") @JsonInclude(JsonInclude.Include.NON_NULL) AnthropicToolChoice toolChoice,
         List<AnthropicMessage> messages,
-        boolean stream
+        boolean stream,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String system,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double temperature
 ) {
     public AnthropicRequest {
         Objects.requireNonNull(model, "model must not be null");
@@ -33,6 +35,11 @@ public record AnthropicRequest(
         private AnthropicToolChoice toolChoice;
         private List<AnthropicMessage> messages;
         private boolean stream;
+        private String system;
+        private Double temperature;
+
+        public Builder system(String system) { this.system = system; return this; }
+        public Builder temperature(Double temperature) { this.temperature = temperature; return this; }
 
 
         public Builder model(String model) {
@@ -66,7 +73,7 @@ public record AnthropicRequest(
         }
 
         public AnthropicRequest build() {
-            return new AnthropicRequest(model, maxTokens, tools, toolChoice, messages, stream);
+            return new AnthropicRequest(model, maxTokens, tools, toolChoice, messages, stream, system, temperature);
         }
 
     }

@@ -43,6 +43,9 @@ public class AnthropicMapper {
                 .toolChoice(toAnthropicToolChoice(chatRequest.toolChoice()))
                 .tools(toolList)
                 .messages(convertChatMessagesToAnthropicMessage(chatRequest))
+                .system(chatRequest.messages().stream().filter(m -> m.role() == Role.SYSTEM)
+                        .map(Message::content).reduce((a, b) -> a + "\n\n" + b).orElse(null))
+                .temperature(chatRequest.temperature())
                 .stream(stream)
                 .build();
     }
@@ -78,6 +81,7 @@ public class AnthropicMapper {
         List<AnthropicMessage> messages = new ArrayList<>();
         List<AnthropicContentBlock> results = new ArrayList<>();
         for (Message message : chatRequest.messages()) {
+            if (message.role() == Role.SYSTEM) continue;
             if (message.role() == Role.TOOL) {
                 if (message.toolCallId() == null || message.toolCallId().isBlank()) {
                     throw new IllegalArgumentException("tool message requires a non-blank tool_call_id");
@@ -110,6 +114,10 @@ public class AnthropicMapper {
             blocks.add(new AnthropicContentBlock.Text(message.content()));
         }
         if (message.role() == Role.ASSISTANT) {
+            // Anthropic has no refusal input block; preserve the assistant's words as text.
+            if (message.refusal() != null && !message.refusal().isEmpty()) {
+                blocks.add(new AnthropicContentBlock.Text(message.refusal()));
+            }
             for (Message.ToolCall call : message.toolCalls()) {
                 blocks.add(new AnthropicContentBlock.ToolUse(
                         call.id(), call.function().name(), toToolInput(call.function().arguments())));
