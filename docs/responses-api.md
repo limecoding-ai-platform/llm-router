@@ -81,6 +81,6 @@ Responses 송신도 `store: false`로 동작합니다. 함수 정의의 `strict`
 
 실제 OpenAI 호출 없이 매핑, HTTP 응답, SSE 순서/누적/실패 및 기존 테스트를 검증합니다. 로컬 HTTP 서버로 JSON/SSE 송신 경로, 본문, 인증 헤더와 429 응답 처리를 검증합니다. OpenAI 계정별 모델 접근 권한이나 실서비스 응답은 이 검증에 포함하지 않습니다.
 
-공통 모델에서 재구성한 assistant 대화 이력은 OpenAI의 입력용 `input_text` 항목으로 보냅니다. 이전 거절 응답도 해당 assistant의 텍스트로 보존합니다.
+공통 모델에서 재구성한 assistant 대화 이력은 문자열 `content`로 보냅니다. 실제 OpenAI API는 assistant 역할의 `input_text` 배열을 400으로 거절하므로 사용하지 않습니다. 이전 거절 응답도 해당 assistant의 텍스트로 보존합니다. 스트림 오류 시 서버 로그에는 모델과 업스트림 HTTP 상태 또는 예외 종류를 기록하며 요청/응답 본문은 기록하지 않습니다.
 
 참고: [OpenAI Responses 마이그레이션 안내](https://developers.openai.com/api/docs/guides/migrate-to-responses)

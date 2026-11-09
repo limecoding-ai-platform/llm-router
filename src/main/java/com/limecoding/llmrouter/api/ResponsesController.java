@@ -11,6 +11,9 @@ import com.limecoding.llmrouter.core.model.UnKnownProviderException;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.client.RestClientResponseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RestController
 @RequestMapping("/v1")
 public class ResponsesController {
+    private static final Logger log = LoggerFactory.getLogger(ResponsesController.class);
     private final ProviderRegistry registry;
     private final ResponsesMapper mapper = new ResponsesMapper();
 
@@ -58,6 +62,12 @@ public class ResponsesController {
                 emitter.complete();
             } catch (Exception error) {
                 if (disconnected.get()) return;
+                // Do not log exception bodies: upstream messages may quote submitted conversation text.
+                if (error instanceof RestClientResponseException upstream) {
+                    log.warn("Responses stream failed: model={}, upstream_status={}", model, upstream.getStatusCode().value());
+                } else {
+                    log.warn("Responses stream failed: model={}, exception={}", model, error.getClass().getSimpleName());
+                }
                 try {
                     if (state != null) state.fail();
                     emitter.complete();

@@ -31,3 +31,9 @@
 - Initial RED: missing ApiType/mapper/capabilities constructor. Subsequent test fixture failure was missing Chat Completions primitive fields; corrected fixture to match documented response.
 - Independent review found assistant history used output-only content types without output identity. Regression test observed RED, then changed reconstructed history to easy input_text parts including refusal text.
 - Verification: full Gradle suite passes 84 tests, 0 failures/errors. Includes loopback HTTP JSON/SSE, authorization/path/body checks and HTTP 429 without fallback. git diff --check clean. No live OpenAI call.
+
+## Follow-up: second-turn failure
+- User reported OpenWebUI second-turn failure with gpt-5.6-terra. Live minimal probe confirmed assistant input_text array returns 400 invalid_value at input[1].content[0]; same history with plain-string content returns 200 completed.
+- Earlier SDK-schema-based assumption and corresponding regression assertion were wrong. Replace reconstructed assistant content with a plain string, preserving refusal text.
+- Added a two-turn HTTP regression using the first response output as the second request history; both new expectations failed before the fix.
+- After the fix: full Gradle suite passes 85 tests, 0 failures/errors; git diff --check clean. Live verification covered minimal synthetic messages, not the user's OpenWebUI deployment.

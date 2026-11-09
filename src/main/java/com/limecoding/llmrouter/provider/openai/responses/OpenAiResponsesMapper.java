@@ -13,11 +13,12 @@ public final class OpenAiResponsesMapper {
                 continue;
             }
             if (message.role() == Role.ASSISTANT) {
-                List<Map<String, Object>> content = new ArrayList<>();
-                // Reconstructed history is an easy input message, not a stored output item with id/status.
-                if (message.content() != null) content.add(Map.of("type", "input_text", "text", message.content()));
-                if (message.refusal() != null) content.add(Map.of("type", "input_text", "text", message.refusal()));
-                if (!content.isEmpty()) input.add(Map.of("type", "message", "role", "assistant", "content", content));
+                // The live API rejects assistant input_text parts despite the SDK's broad input union.
+                // Plain-string assistant history needs no stored output id/status and preserves its text.
+                String content = message.content();
+                if (message.refusal() != null) content = content == null || content.isEmpty()
+                        ? message.refusal() : content + "\n\n" + message.refusal();
+                if (content != null) input.add(Map.of("type", "message", "role", "assistant", "content", content));
                 for (var call : message.toolCalls()) input.add(Map.of("type", "function_call", "call_id", call.id(),
                         "name", call.function().name(), "arguments", call.function().arguments()));
             } else input.add(Map.of("role", message.role().name().toLowerCase(Locale.ROOT), "content", message.content()));

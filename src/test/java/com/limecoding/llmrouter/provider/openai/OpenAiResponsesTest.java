@@ -75,17 +75,15 @@ class OpenAiResponsesTest {
         }
     }
 
-    @Test void assistantHistoryUsesValidInputTextPartsIncludingRefusal() {
+    @Test void assistantHistoryUsesPlainStringIncludingRefusal() {
         var domain = new ChatRequest("test", List.of(Message.user("hi"),
                 Message.assistant("answer", List.of(), "Cannot help with that part", null), Message.user("continue")),
                 null, null, null, null, false, ApiType.RESPONSES);
         var wire = json.valueToTree(mapper.toWire(domain, false));
         var assistant = wire.at("/input/1");
         assertEquals("assistant", assistant.path("role").asText());
-        assertEquals("input_text", assistant.at("/content/0/type").asText());
-        assertEquals("answer", assistant.at("/content/0/text").asText());
-        assertEquals("input_text", assistant.at("/content/1/type").asText());
-        assertEquals("Cannot help with that part", assistant.at("/content/1/text").asText());
+        assertTrue(assistant.path("content").isString());
+        assertEquals("answer\n\nCannot help with that part", assistant.path("content").asText());
     }
 
     @Test void bothIngressPathsUseTheirOwnUpstreamEndpoint() throws Exception {
