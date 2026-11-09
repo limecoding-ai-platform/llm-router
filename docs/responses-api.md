@@ -75,8 +75,12 @@ Content-Type: application/json
 
 응답을 서버에 저장하지 않으며 `store`를 생략해도 false입니다. `store: true`, `previous_response_id`, `conversation`, `background`, 이미지/파일/오디오 입력, 내장 도구, structured output, `reasoning` 및 나머지 미지원 필드는 400 오류입니다. 지원하지 않는 데이터를 조용히 무시하지 않습니다.
 
-현재 OpenAI 송신은 기존 `/chat/completions`, Anthropic 송신은 기존 Messages API를 사용합니다. 이 엔드포인트 추가만으로 이슈 #5의 `reasoning_effort` 오류가 해결되는 것은 아닙니다.
+OpenAI 송신은 수신 경로를 따릅니다. `/v1/responses` 요청은 OpenAI `/v1/responses`로, `/v1/chat/completions` 요청은 OpenAI `/v1/chat/completions`로 전달됩니다. 모델별 `supported-apis` 설정은 [모델 라우팅 문서](model-routing.md#openai-api-지원-설정)를 참고하세요. Anthropic 송신은 기존 Messages API를 사용합니다.
 
-실제 외부 API 호출 없이 매핑, HTTP 응답, SSE 순서/누적/실패 및 기존 테스트를 검증합니다.
+Responses 송신도 `store: false`로 동작합니다. 함수 정의의 `strict`를 생략하면 공통 규격의 비엄격 모드를 유지하도록 명시적인 false를 전송합니다. 업스트림의 reasoning 출력 항목은 공통 텍스트/함수 응답에 포함하지 않으며, 암호화된 reasoning 상태의 재전달도 지원하지 않습니다. `reasoning` 설정 자체는 여전히 미지원이며 이슈 #5의 `reasoning_effort` 오류 해결을 별도로 검증해야 합니다.
+
+실제 OpenAI 호출 없이 매핑, HTTP 응답, SSE 순서/누적/실패 및 기존 테스트를 검증합니다. 로컬 HTTP 서버로 JSON/SSE 송신 경로, 본문, 인증 헤더와 429 응답 처리를 검증합니다. OpenAI 계정별 모델 접근 권한이나 실서비스 응답은 이 검증에 포함하지 않습니다.
+
+공통 모델에서 재구성한 assistant 대화 이력은 OpenAI의 입력용 `input_text` 항목으로 보냅니다. 이전 거절 응답도 해당 assistant의 텍스트로 보존합니다.
 
 참고: [OpenAI Responses 마이그레이션 안내](https://developers.openai.com/api/docs/guides/migrate-to-responses)

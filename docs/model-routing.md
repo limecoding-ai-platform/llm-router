@@ -11,7 +11,7 @@
 }
 ```
 
-`/v1/chat/completions`의 `model`은 항상 슬래시(`/`) 하나로 구분된 `provider/model` 형태여야 합니다.
+`/v1/chat/completions`와 `/v1/responses`의 `model`은 `provider/model` 형태여야 합니다. 첫 번째 슬래시(`/`)가 구분자입니다.
 
 | 입력                             | provider    | model                  |
 |--------------------------------|-------------|------------------------|
@@ -65,3 +65,28 @@
 - 슬래시 뒤가 비었음 (`openai/`)
 
 provider는 소문자로 정규화하고(`OpenAI/gpt-4o-mini` → `openai`), model 부분은 손대지 않는다. 모델명은 업스트림이 대소문자를 구분할 수 있어서다. 첫 번째 슬래시만 구분자로 쓰기 때문에 모델명 자체에 슬래시가 들어가도(`bedrock/anthropic.claude-v2:1/foo`) 뒷부분은 그대로 보존된다.
+
+## OpenAI API 지원 설정
+
+모델의 지원 여부와 실제 요청 경로를 분리합니다.
+
+```yaml
+router:
+  providers:
+    openai:
+      models:
+        - id: gpt-5.6-terra
+          supported-apis: [chat_completions, responses]
+          max-tokens-param: max_completion_tokens
+```
+
+| 수신 경로 | 필요한 지원 항목 | OpenAI 송신 경로 |
+|---|---|---|
+| `/v1/chat/completions` | `chat_completions` | `/v1/chat/completions` |
+| `/v1/responses` | `responses` | `/v1/responses` |
+
+두 항목을 지정하면 양쪽 API를 모두 사용할 수 있습니다. `supported-apis`를 생략하면 이전 설정의 동작을 유지하도록 `[chat_completions]`로 처리합니다. 빈 목록이나 알 수 없는 값은 유효하지 않습니다. Responses만 지원하는 모델은 `[responses]`를 지정하고 `max-tokens-param`을 생략할 수 있습니다. Chat Completions를 지원하는 모델에는 해당 토큰 설정이 필수입니다.
+
+지원되지 않는 API 또는 등록되지 않은 모델은 외부 호출 전에 HTTP 400과 `error.code: unsupported_api`로 거절합니다. 스트리밍도 SSE 시작 전에 검사합니다. 업스트림 실패를 이유로 다른 API로 자동 재시도하지 않습니다.
+
+`ChatRequest.apiType`은 수신 API 종류이며 기본 생성자는 `CHAT_COMPLETIONS`, Responses 수신 매퍼는 `RESPONSES`를 지정합니다. OpenAI 어댑터는 이 값으로 송신 매퍼와 경로를 선택합니다. Anthropic은 기존 공통 모델 변환을 통해 두 수신 형식을 Messages API로 보냅니다.
