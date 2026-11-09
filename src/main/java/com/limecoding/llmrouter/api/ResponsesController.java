@@ -29,6 +29,7 @@ public class ResponsesController {
         ModelRef model = ModelRef.parse(ResponsesMapper.text(request, "model"));
         ChatRequest domain = mapper.toDomain(request, model.model());
         ProviderAdapter adapter = registry.get(model.provider());
+        adapter.validateRequest(domain);
         if (!domain.includeUsage()) {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(mapper.response(adapter.chat(domain), model.original()));

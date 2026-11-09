@@ -19,6 +19,8 @@ public class OpenAiMapper {
         this.dialects = Map.copyOf(dialects);
     }
 
+    public java.util.Set<String> modelIds() { return dialects.keySet(); }
+
 
     public OpenAiRequest toWire(ChatRequest chatRequest) {
         return toWire(chatRequest, false);

@@ -71,7 +71,7 @@ public class ResponsesMapper {
             temperature = value.asDouble();
         }
         return new ChatRequest(model, messages, tools, choice, max, temperature,
-                Boolean.TRUE.equals(bool(request, "stream")));
+                Boolean.TRUE.equals(bool(request, "stream")), ApiType.RESPONSES);
     }
 
     private void addInput(List<Message> messages, JsonNode item) {
