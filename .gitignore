@@ -55,9 +55,8 @@ replay_pid*
 gradle-app.setting
 
 ### Secrets / local config ###
-.env
-.env.*
-!.env.example
+*.env*
+!*.env*example*
 *.pem
 *.key
 *.p12
