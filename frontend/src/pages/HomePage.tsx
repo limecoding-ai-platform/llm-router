@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Icon } from '@/components/Icon'
 import { navigation } from '@/navigation'
+import BackendConnection from '@/components/BackendConnection'
 
 export default function HomePage() {
   return (
@@ -23,6 +24,7 @@ export default function HomePage() {
           <span />
         </div>
       </section>
+      <BackendConnection />
       <section className="overview-section" aria-labelledby="overview-title">
         <div className="section-heading">
           <h2 id="overview-title">프로젝트 개요</h2>
