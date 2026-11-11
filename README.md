@@ -103,7 +103,7 @@ set +a
 
 테스트는 동일한 터미널에서 `./gradlew test`(Windows: `.\gradlew.bat test`)로 실행합니다. 현재 컨텍스트 시작 테스트도 실행 중인 PostgreSQL과 위 DB 변수가 필요합니다. 테스트용 Router·제공업체 키는 더미 값을 사용할 수 있습니다.
 
-운영 배포와 CI의 PostgreSQL 제공 및 환경 변수 주입은 별도로 구성해야 합니다. 현재 테스트는 DB 없이 실행되지 않습니다.
+CI는 테스트용 PostgreSQL 서비스 컨테이너와 환경 변수를 제공해 빌드·테스트를 실행합니다. 운영 배포의 PostgreSQL 제공 및 환경 변수 주입은 별도로 구성해야 합니다. 현재 테스트는 DB 없이 실행되지 않습니다.
 
 `password authentication failed`가 발생하면 최초 DB 생성 시 비밀번호와 실행 설정을 비교합니다. `database "{DB_NAME}" does not exist`는 URL의 변수 표기가 `${DB_NAME}`인지 확인합니다. 애플리케이션도 Compose 안에서 실행하는 경우 호스트는 `localhost` 대신 서비스명 `postgres`를 사용합니다.
 
