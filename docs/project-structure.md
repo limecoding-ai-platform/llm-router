@@ -1,6 +1,19 @@
 # 프로젝트 구조
 
-LLM Router의 패키지 구조와 계층 경계 규율을 정리한 문서입니다.
+LLM Router의 저장소 구조와 백엔드 패키지 경계를 정리한 문서입니다.
+
+## 저장소 구조
+
+- `backend/`: Spring Boot 소스·테스트, Gradle Wrapper와 빌드 설정, Dockerfile
+- `frontend/`: React·TypeScript·Vite 관리 콘솔과 npm 개발 도구
+- `.github/`: 공통 CI와 이슈 템플릿
+- `docs/`: 전체 설계·API·개발 문서
+- 루트 Compose와 환경 변수 예시: 공통 로컬 환경 및 배포 구성
+
+백엔드는 `backend/`를 작업 디렉터리로 사용하며 독립적으로 빌드합니다.
+Java 소스 위치는 `backend/src/main/java`, 테스트 위치는 `backend/src/test/java`입니다.
+아래 단일 모듈 원칙은 백엔드 Gradle 프로젝트에 적용됩니다.
+과거 설계·구현 계획·검토 기록의 경로와 실행 명령은 작성 당시 기준입니다.
 
 ## 전제
 
