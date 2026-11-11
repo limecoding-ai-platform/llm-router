@@ -23,6 +23,8 @@ TypeScript는 typescript-eslint의 지원 범위에 맞춰 6.0 계열을 사용�
 
 ## 설치 및 실행
 
+DB·백엔드를 포함한 실행 순서와 연결 확인은 [로컬 통합 실행 가이드](../docs/local-development.md)를 참고하세요.
+
 저장소 루트에서 실행합니다.
 
 ```bash
@@ -49,7 +51,8 @@ npm run dev
 | `npm run lint:fix`     | 자동 수정 가능한 린트 항목 수정      |
 | `npm run format`       | Prettier 포맷 적용                   |
 | `npm run format:check` | 파일을 수정하지 않고 포맷 검사       |
-| `npm run check`        | 린트·포맷·타입 검사·빌드 전체 실행   |
+| `npm test`             | API·화면·프록시 테스트 실행          |
+| `npm run check`        | 린트·포맷·테스트·타입 검사·빌드 실행 |
 
 빌드 결과를 확인하려면 `npm run build` 이후 `npm run preview`를 실행합니다.
 preview 서버는 로컬 확인용이며 운영 서버가 아닙니다.

@@ -62,6 +62,7 @@ docker compose --env-file .env.local -f compose.local.yaml down
 
 ## 서비스별 실행
 
+- [로컬 통합 실행 가이드](docs/local-development.md): 환경 파일 준비부터 DB·백엔드·프런트엔드 실행, API 연결 확인, 종료 및 문제 해결
 - [백엔드 실행·테스트·DB 마이그레이션](backend/README.md)
 - [프런트엔드 실행·개발 도구](frontend/README.md)
 

@@ -2,6 +2,7 @@
 
 Spring Boot 기반 LLM Router입니다. 아래 명령은 저장소 루트에서 실행합니다.
 먼저 [공통 실행 안내](../README.md)에 따라 PostgreSQL을 실행하세요.
+프런트엔드까지 함께 실행하려면 [로컬 통합 실행 가이드](../docs/local-development.md)를 참고하세요.
 
 ## Spring Boot DB 연결 및 실행
 
