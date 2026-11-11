@@ -5,7 +5,7 @@ LLM Router의 저장소 구조와 백엔드 패키지 경계를 정리한 문서
 ## 저장소 구조
 
 - `backend/`: Spring Boot 소스·테스트, Gradle Wrapper와 빌드 설정, Dockerfile
-- `frontend/`: React·TypeScript·Vite 관리 콘솔을 구성할 위치
+- `frontend/`: React·TypeScript·Vite 관리 콘솔과 npm 개발 도구
 - `.github/`: 공통 CI와 이슈 템플릿
 - `docs/`: 전체 설계·API·개발 문서
 - 루트 Compose와 환경 변수 예시: 공통 로컬 환경 및 배포 구성

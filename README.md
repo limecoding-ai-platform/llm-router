@@ -63,12 +63,12 @@ docker compose --env-file .env.local -f compose.local.yaml down
 ## 서비스별 실행
 
 - [백엔드 실행·테스트·DB 마이그레이션](backend/README.md)
-- [프런트엔드 구성 상태](frontend/README.md)
+- [프런트엔드 실행·개발 도구](frontend/README.md)
 
 ## 저장소 구성
 
 - `backend/`: Spring Boot 소스, Gradle 빌드 및 Docker 이미지 정의
-- `frontend/`: 관리 콘솔 프로젝트 위치
+- `frontend/`: React·TypeScript·Vite 관리 콘솔과 개발 도구
 - `.github/`, `docs/`: 전체 프로젝트 CI, 이슈 템플릿 및 문서
 - 루트 Compose와 환경 파일: 공통 개발 환경 및 배포 구성
 
