@@ -47,11 +47,16 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: gradle
+          cache-dependency-path: |
+            backend/*.gradle
+            backend/gradle/wrapper/gradle-wrapper.properties
 
       - name: Grant execute permission
+        working-directory: backend
         run: chmod +x gradlew
 
       - name: Build and test
+        working-directory: backend
         run: ./gradlew clean build --no-daemon --stacktrace
   publish:
     name: Build and Push Docker Image
@@ -78,8 +83,8 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/llm-router:${{ github.sha }}
