@@ -50,6 +50,12 @@ preview 서버는 로컬 확인용이며 운영 서버가 아닙니다.
 
 ## 협업 규칙
 
+`@/`는 `frontend/src/`를 가리키는 경로 별칭입니다.
+예를 들어 `import App from '@/App'`처럼 사용합니다.
+TypeScript의 `paths`와 Vite의 `resolve.alias`에 동일하게 설정되어 있습니다.
+같은 폴더 내에서는 상대 경로도 사용할 수 있습니다.
+`src/` 내부 폴더는 레이아웃·라우팅 등 기능을 구현하면서 추가합니다.
+
 - 의존성 추가·변경 시 `package.json`과 `package-lock.json`을 함께 반영합니다.
 - 다른 개발 환경과 CI에서는 `npm ci`로 lockfile 기준 설치를 수행합니다.
 - 편집기의 ESLint·Prettier·EditorConfig 지원을 활성화하면 저장 시 규칙을 적용할 수 있습니다.
