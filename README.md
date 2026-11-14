@@ -6,6 +6,10 @@
 
 ## 문서
 
+### 설계 결정
+
+- [공용 ADR 가이드와 목록](docs/adr/README.md): 작성 규칙, 템플릿, 결정 기록
+
 ### 제품 기획
 
 - [내부 팀용 통합 콘솔 기획·설계](docs/superpowers/specs/2026-11-10-router-console-design.md): 제품 목표, 첫 버전 범위, 권한, 요청 기록, 예산, 알림 및 미확정 정책
